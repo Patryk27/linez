@@ -5,10 +5,14 @@ use minifb::{Key, Window, WindowOptions};
 use rand::Rng;
 use rand::RngCore;
 use std::path::PathBuf;
+use std::thread;
 
 #[derive(Parser)]
 struct Args {
     target: PathBuf,
+
+    #[clap(short, long, default_value = "1")]
+    threads: usize,
 
     #[clap(short, long, default_value = "4096")]
     iterations: usize,
@@ -29,11 +33,11 @@ fn main() {
     let width = target.width;
     let height = target.height;
 
-    let mut approx = Image::from(RgbImage::new(width, height));
+    let approx = Image::from(RgbImage::new(width, height));
+    let mut approxes = vec![approx; args.threads];
 
     // ---
 
-    let mut rng = rand::thread_rng();
     let mut canvas = vec![0; (width * height) as usize];
 
     let mut window = Window::new(
@@ -45,15 +49,19 @@ fn main() {
     .unwrap();
 
     while window.is_open() && !window.is_key_down(Key::Escape) {
-        let mut got_improvement = false;
+        thread::scope(|s| {
+            for approx in &mut approxes {
+                s.spawn(|| {
+                    let mut rng = rand::thread_rng();
 
-        for _ in 0..args.iterations {
-            got_improvement |= tick(&mut rng, &target, &mut approx);
-        }
+                    for _ in 0..args.iterations {
+                        tick(&mut rng, &target, approx);
+                    }
+                });
+            }
+        });
 
-        if got_improvement {
-            approx.encode(&mut canvas);
-        }
+        compose(&mut canvas, &target, &approxes);
 
         window
             .update_with_buffer(&canvas, width as usize, height as usize)
@@ -80,9 +88,18 @@ fn tick(rng: &mut impl RngCore, target: &Image, approx: &mut Image) -> bool {
     // We're using a closure, since `Brasenham` is not `Clone`-able and, for
     // performance reasons, we'd like to avoid `.collect()`-ing the temporary
     // points here.
+    let width = target.width;
+    let height = target.height;
+
     let changes = || {
         Bresenham::new((beg_x, beg_y), (end_x, end_y))
-            .map(|(x, y)| [x as u32, y as u32])
+            .flat_map(|(x, y)| {
+                if x >= 0 && x < (width as isize) && y >= 0 && y < (height as isize) {
+                    Some([x as u32, y as u32])
+                } else {
+                    None
+                }
+            })
             .map(|pos| (pos, [r, g, b]))
     };
 
@@ -103,6 +120,7 @@ fn tick(rng: &mut impl RngCore, target: &Image, approx: &mut Image) -> bool {
 type Point = [u32; 2];
 type Color = [u8; 3];
 
+#[derive(Clone)]
 struct Image {
     width: u32,
     height: u32,
@@ -170,18 +188,6 @@ impl Image {
         }
     }
 
-    fn encode(&self, buf: &mut [u32]) {
-        let mut buf = buf.iter_mut();
-
-        for y in 0..self.height {
-            for x in 0..self.width {
-                let [r, g, b] = self.color_at([x, y]);
-
-                *buf.next().unwrap() = u32::from_be_bytes([0, r, g, b]);
-            }
-        }
-    }
-
     fn color_at(&self, point: Point) -> Color {
         let offset = (point[1] * self.width + point[0]) as usize * 3;
         let color = &self.pixels[offset..][..3];
@@ -207,6 +213,32 @@ impl From<RgbImage> for Image {
             width,
             height,
             pixels,
+        }
+    }
+}
+
+fn compose(canvas: &mut Vec<u32>, target: &Image, images: &[Image]) {
+    let mut buf = canvas.iter_mut();
+
+    for y in 0..target.height {
+        for x in 0..target.width {
+            let target = target.color_at([x, y]);
+
+            let winner = images
+                .iter()
+                .map(|image| {
+                    let color = image.color_at([x, y]);
+                    let loss = Image::pixel_loss(color, target);
+
+                    (color, loss)
+                })
+                .min_by(|(_, a), (_, b)| a.total_cmp(b))
+                .unwrap()
+                .0;
+
+            let [r, g, b] = winner;
+
+            *buf.next().unwrap() = u32::from_be_bytes([0, r, g, b]);
         }
     }
 }
