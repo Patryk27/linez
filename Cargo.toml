@@ -1,0 +1,12 @@
+[package]
+name = "linez"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+bresenham = "0.1.1"
+clap = { version = "4.5.24", features = ["derive"] }
+image = "0.25.5"
+minifb = "0.27"
+rand = "0.8.5"
+rayon = "1.10.0"
