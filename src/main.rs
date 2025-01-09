@@ -82,7 +82,6 @@ fn tick(rng: &mut impl RngCore, target: &Image, approx: &mut Image) -> bool {
     // points here.
     let changes = || {
         Bresenham::new((beg_x, beg_y), (end_x, end_y))
-            .into_iter()
             .map(|(x, y)| [x as u32, y as u32])
             .map(|pos| (pos, [r, g, b]))
     };
@@ -145,7 +144,7 @@ impl Image {
 
                 loss_with_changes - loss_without_changes
             })
-            .sum::<f32>()
+            .sum()
     }
 
     /// Calculates how far apart `a` is from `b`.
@@ -172,7 +171,7 @@ impl Image {
     }
 
     fn encode(&self, buf: &mut [u32]) {
-        let mut buf = buf.into_iter();
+        let mut buf = buf.iter_mut();
 
         for y in 0..self.height {
             for x in 0..self.width {
