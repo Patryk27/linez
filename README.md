@@ -1,6 +1,6 @@
 # linez
 
-Quick & fun tool that approximates images using overlapping lines:
+Quick & fun tool that approximates images using lines:
 
 <p align="center">
   <img height="512" src="_readme/starry-night.jpg" />
