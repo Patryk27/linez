@@ -77,7 +77,7 @@ fn tick(rng: &mut impl RngCore, target: &Image, approx: &mut Image) -> bool {
 
     // Prepare changes required to draw the line.
     //
-    // We're using a closure, since `Brasenham` is not `Clone`-able and, for
+    // We're using a closure, since `Bresenham` is not `Clone`-able and, for
     // performance reasons, we'd like to avoid `.collect()`-ing the temporary
     // points here.
     let changes = || {
@@ -135,12 +135,12 @@ impl Image {
     ) -> f32 {
         changes
             .into_iter()
-            .map(|(pos, new_col)| {
+            .map(|(pos, new_color)| {
                 let target_color = target.color_at(pos);
                 let approx_color = approx.color_at(pos);
 
                 let loss_without_changes = Self::pixel_loss(target_color, approx_color);
-                let loss_with_changes = Self::pixel_loss(target_color, new_col);
+                let loss_with_changes = Self::pixel_loss(target_color, new_color);
 
                 loss_with_changes - loss_without_changes
             })
