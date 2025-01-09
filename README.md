@@ -41,7 +41,7 @@ fn image_distance(img_a, img_b):
     dist = 0.0
     
     for all pixels in img_a and img_b:
-        dist = pixel_distance(pixel_a, pixel_b)
+        dist += pixel_distance(pixel_a, pixel_b)
         
     return dist
 
