@@ -150,7 +150,7 @@ impl Image {
     /// Calculates how far apart `a` is from `b`.
     ///
     /// We use mean squared error, which is basically squared Euclidian distance
-    /// between the channels of given RGB color.
+    /// between the channels of given RGB colors.
     ///
     /// Note that since RGB is not a perceptual color model¹, calculating loss
     /// this way is not ideal - but it's good enough.
