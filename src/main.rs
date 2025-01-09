@@ -50,14 +50,16 @@ fn main() {
 
     while window.is_open() && !window.is_key_down(Key::Escape) {
         thread::scope(|s| {
+            let mut threads = Vec::new();
+
             for approx in &mut approxes {
-                s.spawn(|| {
+                threads.push(s.spawn(|| {
                     let mut rng = rand::thread_rng();
 
                     for _ in 0..args.iterations {
                         tick(&mut rng, &target, approx);
                     }
-                });
+                }));
             }
         });
 
