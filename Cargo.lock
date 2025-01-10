@@ -679,7 +679,6 @@ dependencies = [
  "image",
  "minifb",
  "rand",
- "rayon",
 ]
 
 [[package]]

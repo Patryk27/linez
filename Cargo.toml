@@ -9,4 +9,3 @@ clap = { version = "4.5.24", features = ["derive"] }
 image = "0.25.5"
 minifb = "0.27"
 rand = "0.8.5"
-rayon = "1.10.0"
