@@ -12,6 +12,9 @@ struct Args {
 
     #[clap(short, long, default_value = "4096")]
     iterations: usize,
+
+    #[clap(short, long)]
+    output: Option<PathBuf>,
 }
 
 fn main() {
@@ -58,6 +61,13 @@ fn main() {
         window
             .update_with_buffer(&canvas, width as usize, height as usize)
             .unwrap();
+    }
+
+    if let Some(output_path) = args.output {
+        let final_image: RgbImage = approx.into();
+        final_image
+            .save(output_path)
+            .expect("couldn't save final image");
     }
 }
 
@@ -208,5 +218,13 @@ impl From<RgbImage> for Image {
             height,
             pixels,
         }
+    }
+}
+
+impl From<Image> for RgbImage {
+    fn from(img: Image) -> Self {
+        RgbImage::from_fn(img.width, img.height, |x, y| {
+            image::Rgb(img.color_at([x, y]))
+        })
     }
 }
